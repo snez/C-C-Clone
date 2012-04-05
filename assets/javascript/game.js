@@ -7,10 +7,17 @@ $ (function () {
 	var ctx = canvas[0].getContext ('2d');
 	var render = rendCanvas[0].getContext ('2d');
 
-	var tank = {
-		x: 0,
-		y: 0,
-		src: 'assets/units/tank-basic.png'
+	var unit = {
+		PosX: 0,
+		PosY: 0
+	}
+
+	tank = Object.create (unit);
+	tank.src = 'assets/units/tank-basic.png';
+
+	tank.move = function (destination) {
+		//tank.PosX to desination.x
+		//tank.PosY to desination.y
 	}
 
 	var world = {
@@ -37,34 +44,34 @@ $ (function () {
 	}
 
 	var gameLoop = function () {
-		loadImg (tank.src, tank.x, tank.y);
+		loadImg (tank.src, tank.PosX, tank.PosY);
 	}
 
-	setTimeout(gameLoop(), 500);
+	setTimeout(gameLoop(), 33);
 	//gameLoop ();
 
 	$(document.body).keydown ( function (e) {
 		//console.log (e);
 		switch (e.which) {
-			case 68:
+			case 68: //left
 				clear(ctx);
-				tank.x+=10;
+				tank.PosX+=10;
 				break;	
-			case 65:
+			case 65: //right
 				clear(ctx);
-				tank.x-=10;
+				tank.PosX-=10;
 				break;	
-			case 87:
+			case 87: //up
 				clear(ctx);
-				tank.y-=10;
+				tank.PosY-=10;
 				break;
-			case 83:
+			case 83: //down
 				clear(ctx);
-				tank.y+=10;
+				tank.PosY+=10;
 				break;
 		}
-		
-		loadImg(tank.src, tank.x, tank.y);
+
+		loadImg(tank.src, tank.PosX, tank.PosY);
 
 /*		if (e.which === 68) {
 			//console.log ('d');
