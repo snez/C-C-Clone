@@ -122,7 +122,7 @@ $ (function () {
 				if (items[i].moving) {
 					console.log('item: ',items[i].x);
 					
-					//Move complex moving calculations - in progress. Only moves positive X, Y.
+					//More complex moving calculations - in progress. Only moves positive X, Y.
 					/*game.calculateTravel(items[i], function (moveTo) {
 						console.log('moveTo:', moveTo)
 						items[i].x = (items[i].x <= items[i].moveToX) ? moveTo.x : items[i].x;
