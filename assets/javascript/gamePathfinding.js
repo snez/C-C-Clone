@@ -54,10 +54,18 @@ $ (function () {
 		game.loadImg = function (item) { //src, x, y, cb) {
 			var img = new Image();
 			img.src = item.src;
+			console.log(item.src);
 			return img;
 		}
 
-		//Loaded Images Container
+		game.world = {
+			screen: {
+				maxX: 910,
+				maxY: 552
+			} 
+		}
+
+		//Load Images
 		game.images = {
 			unit: {
 				basicTank: undefined
@@ -66,19 +74,11 @@ $ (function () {
 				grass: undefined
 			}
 		};
-
-		game.world = {
-			screen: {
-				maxX: 960,
-				maxY: 600
-			} 
-		}
-
 		//Clear pass ctx (real context) or ctxBuffer (buffer);
 		game.clear = function (context) {
 			context.clearRect(0,0, canvas.width, canvas.height);
 		}
-		
+
 		//Draw Background => Basic, needs proper mapping.
 		game.drawBackground = function () {
 			var bgItem = Object.create(grass);
@@ -206,7 +206,7 @@ $ (function () {
 		// Performs the gameLoop
 		game.gameLoop = function () {
 			this.controls();
-			this.drawBackground();
+			game.drawBackground();
 			setInterval( 
 				function() {
 					if(game.stopLoop === false) { 
