@@ -161,7 +161,7 @@ pathfinding.getLowestFScore = function () {
 	}
 	return lowestF;
 }
-pathfinding.getPathToArray = function () {
+pathfinding.getPath = function () {
 	var arPath = [];
 	var node = this.path;
 
@@ -221,4 +221,4 @@ pf.start ();
 console.log ('startNode, endNode: ',pf.startNode, pf.endNode);
 console.log ('grid: ', pf.grid);
 console.log ('path: ', pf.path);
-console.log ('path array: ', pf.getPathToArray());
+console.log ('path array: ', pf.getPath());
