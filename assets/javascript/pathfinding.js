@@ -14,7 +14,9 @@ pathfinding.orthogonalScore = 10;
 pathfinding.grid = [];
 pathfinding.path = null;
 
-/* An individual node (movement 'block'). */
+/* An individual node (movement 'block'). 
+	Should be declared with new e.g. var this.startNode = new this.node(1,1);
+*/
 pathfinding.node = function (x, y, traversable) {
 	this.x = x;
 	this.y = y;
@@ -30,6 +32,9 @@ pathfinding.addStartNode = function (x, y) {
 pathfinding.addEndNode = function (x, y) {
 	this.endNode = new this.node (x, y);
 }
+/* Sets the endNode to the actual grid version of the node, to get the traversable value 
+	returns callback noting whether the endNode is traversable.
+*/
 pathfinding.checkEndNodeIsTraversable = function (callback) {
 	this.endNode = this.grid[this.endNode.x][this.endNode.y];
 	callback((this.endNode.traversable === false) ? false : true);
@@ -42,6 +47,9 @@ pathfinding.setMovementCost = function (orthogonal, diagonal) {
 	this.orthogonalScore = (orthogonal === undefined || orthogonal === null) ? this.orthogonalScore : orthogonal;
 	this.diagonalScore = (diagonal === undefined || diagonal === null) ? Math.round(this.orthogonalScore * 1.4) : diagonal;
 }
+/* Creates the grid 0 to x && y. 0 based but expanded to +1, as per standard concept of a grid.
+	e.g. x=10, y=10 => this.grid.length === 11, and this.grid[10].length === 11;
+*/
 pathfinding.createGrid = function (x, y) {
 	for (var iX = 0; iX<x+1; iX++) {
 		var ar = [];
@@ -52,6 +60,7 @@ pathfinding.createGrid = function (x, y) {
 	}
 	return this.grid;
 }
+/* Allows a grid node to be made not traversable. */
 pathfinding.alterGrid = function (x, y, trav) {
 	this.grid[x][y].traversable = trav;
 }
@@ -146,6 +155,12 @@ pathfinding.getGridNode = function (node, x, y) {
 		
 	}
 }
+
+/* Gets all the nodes adjacent to the node passed in.
+	For each of these returned from this.getGridNode a value of 0 or 1 should be returned.
+	if they're all 0 then none of the adjacent nodes where reachable and no improvement was found.
+	=> destination not reachable.
+ */
 pathfinding.getAllAdjacentNodes = function (node) {
 	var iRet = 0;
 	iRet += this.getGridNode (node, node.x-1, node.y-1);
@@ -159,12 +174,7 @@ pathfinding.getAllAdjacentNodes = function (node) {
 	iRet += this.getGridNode (node, node.x, node.y+1);
 	iRet += this.getGridNode (node, node.x+1, node.y+1);
 
-	if (iRet === 0) {
-		return 0;
-	}
-	else {
-		return 1;
-	}
+	return (iRet === 0) ? 0 : 1;
 }
 /* Calculates the g (generated) score => Move cost from start node to this node */
 pathfinding.calculateG = function (node) {
@@ -189,6 +199,7 @@ pathfinding.calculateH = function (node) {
 
 	return z;
 }
+/* Returns the lowest f score --> quickest node in openset. */
 pathfinding.getLowestFScore = function () {
 	var lowestF = -1;
 	for (var i=0;i<this.openset.length;i++) {
@@ -197,6 +208,7 @@ pathfinding.getLowestFScore = function () {
 	}
 	return lowestF;
 }
+/* Changes the path as a single node (with parentNodes) into an array in the right order. */
 pathfinding.getPath = function () {
 	var arPath = [];
 	var node = this.path;
@@ -207,6 +219,9 @@ pathfinding.getPath = function () {
 	}
 	return arPath.reverse();
 }
+/* Special error object, for when an error occurs.
+	- EndNode is not traversable, or EndNode is not reachable.
+ */
 pathfinding.err = function (no, msg) {
 	var error = {};
 	error.msg = msg;
@@ -217,6 +232,7 @@ pathfinding.err = function (no, msg) {
 		2: EndNode unreachable;
 	*/
 }
+/* Main method for running the pathfinding script. */
 pathfinding.start = function (callback) {
 	var that = this;
 	this.checkEndNodeIsTraversable (function (traversable) {
@@ -230,20 +246,20 @@ pathfinding.start = function (callback) {
 				var lowestNode = that.getLowestFScore ();			//4
 				var iRet = that.getAllAdjacentNodes (lowestNode);
 				if (iRet === 0) {
-					var err = new that.err(2, 'Cannot reach end node');
+					var err = new that.err (2, 'Cannot reach end node');
 					callback(err)
 					done = 1;
 				}
 				else {
 					done = that.moveFromOpensetToClosedset (lowestNode);
 					if (done === 1) {
-						callback(null, that.getPath());
+						callback (null, that.getPath ());
 					}
 				}
 			}
 		}
 		else {
-			var err = new that.err(1, 'End node not traversable.');
+			var err = new that.err (1, 'End node not traversable.');
 			callback(err);
 		}
 	});
@@ -251,6 +267,7 @@ pathfinding.start = function (callback) {
 	//console.log ('path found!')
 }
 
+//Instance
 var pf = Object.create (pathfinding);
 pf.addStartNode (0,0);
 pf.addEndNode (3,3);
@@ -261,7 +278,7 @@ pf.alterGrid (2,2,false);
 pf.alterGrid (3,2,false);
 pf.start (function (err, path) {
 	if (err) {
-		console.error (err.msg);
+		console.error (err.msg, err.no);
 	}
 	else {
 		console.log (path);
@@ -282,7 +299,7 @@ console.log ('path: ', pf.path);
 //console.log ('path array: ', pf.getPath());
 */
 
-//Instance
+
 /*var pf = Object.create (pathfinding);
 pf.setMovementCost(9);
 pf.addStartNode (3,3);
