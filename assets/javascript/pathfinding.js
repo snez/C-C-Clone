@@ -1,3 +1,5 @@
+if(typeof console === undefined ) { console = {}; console.log = function () {};};
+
 // pathfinding.js
 var pathfinding = {};
 pathfinding.openset = [];
@@ -28,6 +30,10 @@ pathfinding.addStartNode = function (x, y) {
 pathfinding.addEndNode = function (x, y) {
 	this.endNode = new this.node (x, y);
 }
+pathfinding.checkEndNodeIsTraversable = function (callback) {
+	this.endNode = this.grid[this.endNode.x][this.endNode.y];
+	callback((this.endNode.traversable === false) ? false : true);
+}
 /* Sets movement costs:
 		If orthogonal is undefined/null then uses default value of 10.
 		If diagonal is undefined/null then uses orthogonal * 1.4 (sqr of 2).
@@ -37,13 +43,14 @@ pathfinding.setMovementCost = function (orthogonal, diagonal) {
 	this.diagonalScore = (diagonal === undefined || diagonal === null) ? Math.round(this.orthogonalScore * 1.4) : diagonal;
 }
 pathfinding.createGrid = function (x, y) {
-	for (var iX = 0; iX<x; iX++) {
+	for (var iX = 0; iX<x+1; iX++) {
 		var ar = [];
-		for (var iY = 0; iY<y; iY++) {
+		for (var iY = 0; iY<y+1; iY++) {
 			ar.push (new this.node (iX, iY));
 		}
 		this.grid.push (ar);
 	}
+	return this.grid;
 }
 pathfinding.alterGrid = function (x, y, trav) {
 	this.grid[x][y].traversable = trav;
@@ -51,7 +58,11 @@ pathfinding.alterGrid = function (x, y, trav) {
 /* Finds if node is already in array based on x,y values. */
 pathfinding.indexOf = function (node, array) {
 	//console.log (node);
+	//console.log(array);
 	for (var i=0; i<array.length; i++) {
+		if(node === undefined) {
+			return -1;//console.log ('indexOf undefined: ',i,node);
+		}
 		if(array[i].x === node.x && array[i].y === node.y){
 			return i;
 		}
@@ -61,7 +72,8 @@ pathfinding.indexOf = function (node, array) {
 pathfinding.addToOpenset = function (node, parent) {
 	var indexOpen = this.indexOf (node, this.openset);
 	var indexClosed = this.indexOf (node, this.closedset);
-	if ((node.traversable === true && indexOpen === -1 && indexClosed === -1) || (node.x === this.startNode.x && node.y === this.startNode.y)) {
+	if(node === undefined) { console.log(parent, node);}
+	if ((node.traversable === true && indexOpen === -1 && indexClosed === -1)) {// || node.x === this.startNode.x && node.y === this.startNode.y)) {
 		if (parent !== undefined) {
 			//console.log ('parent: ', parent, node, parent.x, parent.y, node.x, node.y, indexClosed);
 			node.parentNode = parent;
@@ -71,6 +83,10 @@ pathfinding.addToOpenset = function (node, parent) {
 			//console.log (node.g, node.h, node.f);
 		}
 		this.openset.push (node);
+		return 1;
+	}
+	else if (node.traversable === false) {
+		return 0;
 	}
 	else if (indexOpen > -1 && indexClosed !== -1) {
 		
@@ -80,6 +96,7 @@ pathfinding.addToOpenset = function (node, parent) {
 			this.openset[indexOpen].parentNode = parent;
 			this.openset[indexOpen].f = this.openset[indexOpen].g + this.openset[indexOpen].h;
 		}
+		return 1;
 	}
 }
 pathfinding.addToClosedset = function (node) {
@@ -112,23 +129,42 @@ pathfinding.moveFromOpensetToClosedset = function (node) {
 	}
 }
 pathfinding.getGridNode = function (node, x, y) {
-	if(x < 0  || y < 0) {}
+	//if(x == NaN) {console.log(node,x,y);}
+	//console.log('this.grid[x]:', node, this.grid.length,x,y,this.grid[x]);
+	//x = x-1;
+	//y = y-1;
+	if (node === -1) {return 0;}
+	if(x < 0  || y < 0 || x >= this.grid.length || y >= this.grid[x].length || node === -1) {
+		return 0;
+	}
 	else {
+		//console.log(x,y, this.openset.length);
 		var new_node = this.grid[x][y];
-		this.addToOpenset (new_node, node);
+		//console.log(new_node);
+		if(new_node === undefined) {console.log(x,y);}
+		return this.addToOpenset (new_node, node);
+		
 	}
 }
 pathfinding.getAllAdjacentNodes = function (node) {
-	this.getGridNode (node, node.x-1, node.y-1);
-	this.getGridNode (node, node.x, node.y-1);
-	this.getGridNode (node, node.x+1, node.y-1);
+	var iRet = 0;
+	iRet += this.getGridNode (node, node.x-1, node.y-1);
+	iRet += this.getGridNode (node, node.x, node.y-1);
+	iRet += this.getGridNode (node, node.x+1, node.y-1);
 
-	this.getGridNode (node, node.x-1, node.y);
-	this.getGridNode (node, node.x+1, node.y);
+	iRet += this.getGridNode (node, node.x-1, node.y);
+	iRet += this.getGridNode (node, node.x+1, node.y);
 
-	this.getGridNode (node, node.x-1, node.y+1);
-	this.getGridNode (node, node.x, node.y+1);
-	this.getGridNode (node, node.x+1, node.y+1);
+	iRet += this.getGridNode (node, node.x-1, node.y+1);
+	iRet += this.getGridNode (node, node.x, node.y+1);
+	iRet += this.getGridNode (node, node.x+1, node.y+1);
+
+	if (iRet === 0) {
+		return 0;
+	}
+	else {
+		return 1;
+	}
 }
 /* Calculates the g (generated) score => Move cost from start node to this node */
 pathfinding.calculateG = function (node) {
@@ -171,34 +207,83 @@ pathfinding.getPath = function () {
 	}
 	return arPath.reverse();
 }
-pathfinding.start = function () {
-	this.addToOpenset (this.startNode);  				//1
-	this.getAllAdjacentNodes (this.startNode)  			//2
-	this.moveFromOpensetToClosedset (this.startNode);  	//3
-	
-	var done = 0;
-	while (done === 0) {
-		var lowestNode = this.getLowestFScore ();			//4
-		this.getAllAdjacentNodes (lowestNode);
-		done = this.moveFromOpensetToClosedset (lowestNode);
-		//done = 1;
-	}
-	console.log ('path found!')
-/*
-	var lowestNode = this.getLowestFScore ();			//4
-	console.log ('lowestNode: ', lowestNode);
-	this.moveFromOpensetToClosedset (lowestNode);
-	this.getAllAdjacentNodes (lowestNode);
+pathfinding.err = function (no, msg) {
+	var error = {};
+	error.msg = msg;
+	error.no = no;
+	return error;
+	/*
+		1: EndNode / StartNode not traversable;
+		2: EndNode unreachable;
+	*/
+}
+pathfinding.start = function (callback) {
+	var that = this;
+	this.checkEndNodeIsTraversable (function (traversable) {
+		if (traversable) {
+			that.addToOpenset (that.startNode);  				//1
+			that.getAllAdjacentNodes (that.startNode)  			//2
+			that.moveFromOpensetToClosedset (that.startNode);  	//3
+			
+			var done = 0;
+			while (done === 0) {
+				var lowestNode = that.getLowestFScore ();			//4
+				var iRet = that.getAllAdjacentNodes (lowestNode);
+				if (iRet === 0) {
+					var err = new that.err(2, 'Cannot reach end node');
+					callback(err)
+					done = 1;
+				}
+				else {
+					done = that.moveFromOpensetToClosedset (lowestNode);
+					if (done === 1) {
+						callback(null, that.getPath());
+					}
+				}
+			}
+		}
+		else {
+			var err = new that.err(1, 'End node not traversable.');
+			callback(err);
+		}
+	});
 
-	var nextLowestNode = this.getLowestFScore ();
-	this.moveFromOpensetToClosedset (nextLowestNode);
-	this.getAllAdjacentNodes (nextLowestNode);
-	console.log ('nextLowestNode:', nextLowestNode);
-*/
+	//console.log ('path found!')
 }
 
-//Instance
 var pf = Object.create (pathfinding);
+pf.addStartNode (0,0);
+pf.addEndNode (3,3);
+pf.createGrid (3,3);
+pf.alterGrid (0,2,false);
+pf.alterGrid (1,2,false);
+pf.alterGrid (2,2,false);
+pf.alterGrid (3,2,false);
+pf.start (function (err, path) {
+	if (err) {
+		console.error (err.msg);
+	}
+	else {
+		console.log (path);
+	}
+});
+
+/*var pf = Object.create (pathfinding);
+pf.setMovementCost(10);
+pf.addStartNode (0,0);
+pf.addEndNode (24,12);
+pf.createGrid (Math.ceil(1200/50),Math.ceil(600/50));
+
+pf.start ();
+
+console.log ('startNode, endNode: ',pf.startNode, pf.endNode);
+console.log ('grid: ', pf.grid);
+console.log ('path: ', pf.path);
+//console.log ('path array: ', pf.getPath());
+*/
+
+//Instance
+/*var pf = Object.create (pathfinding);
 pf.setMovementCost(9);
 pf.addStartNode (3,3);
 pf.addEndNode (1,1);
@@ -207,18 +292,11 @@ pf.alterGrid (2,0, false);
 pf.alterGrid (2,1,false);
 pf.alterGrid (2,2,false);
 pf.alterGrid (2,3,false);
-/*
-pf.addStartNode (2,2);
-pf.addEndNode (6,2);
-pf.createGrid (10,10);
-pf.alterGrid (4,1, false);
-pf.alterGrid (4,2,false);
-pf.alterGrid (4,3,false);*/
-//pf.alterGrid (2,3,false);
-//pf.alterGrid (3,4,false);
+
 pf.start ();
 
 console.log ('startNode, endNode: ',pf.startNode, pf.endNode);
 console.log ('grid: ', pf.grid);
 console.log ('path: ', pf.path);
 console.log ('path array: ', pf.getPath());
+*/
